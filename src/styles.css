@@ -3922,12 +3922,17 @@ body.mode-performance .debug-panel {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 18px 0 10px;
+  /* Top padding bumped so the floating emoji hand never grazes the
+     demo frame edge; bottom padding tightened to compensate so the
+     composition still reads as balanced. */
+  padding: 26px 0 8px;
 }
 .spread-demo .gd-chord {
   position: relative;
-  width: 44px;
-  height: 44px;
+  /* Chord shrunk again — ~25% smaller than the previous 44px so the
+     glow at peak scale comfortably fits the 86px demo frame. */
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: rgba(255, 92, 243, 0.18);
   border: 1px solid var(--pink);
@@ -3941,11 +3946,14 @@ body.mode-performance .debug-panel {
 }
 .spread-demo .gd-hands {
   position: absolute;
-  top: -14px;
+  /* Hand sits closer to the chord (overlapping the top edge slightly)
+     instead of floating above — no top clipping at any point in the
+     animation loop. */
+  top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   pointer-events: none;
 }
 .spread-demo .gd-hand {
@@ -3953,14 +3961,16 @@ body.mode-performance .debug-panel {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 24px;
-  filter: drop-shadow(0 0 10px var(--pink));
+  font-size: 22px;
+  /* Tighter shadow halo so the hand's effective bounding box stays
+     inside the frame even with the glow filter applied. */
+  filter: drop-shadow(0 0 6px var(--pink));
 }
 .spread-demo .gd-hand-pinch  { animation: gdShowFirst  2.6s ease-in-out infinite; }
 .spread-demo .gd-hand-spread { animation: gdShowSecond 2.6s ease-in-out infinite; }
 @keyframes gdGlowSwell {
-  0%, 100% { transform: scale(0.55); opacity: 0.35; }
-  55%      { transform: scale(1.25); opacity: 0.95; }
+  0%, 100% { transform: scale(0.5);  opacity: 0.35; }
+  55%      { transform: scale(1.15); opacity: 0.95; }
 }
 @keyframes gdShowFirst {
   0%, 30%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
