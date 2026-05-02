@@ -3451,6 +3451,61 @@ body.mode-performance .debug-panel {
   min-width: 140px;
 }
 
+/* ---------- Welcome modal v2 (3-step intro) ---------- */
+.intro-card.welcome-card-v2 {
+  width: min(560px, 100%);
+}
+.welcome-steps {
+  list-style: none;
+  margin: 8px 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.welcome-steps li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.welcome-steps .ws-num {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(92, 232, 255, 0.08);
+}
+.welcome-steps .ws-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.welcome-steps .ws-title {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+.welcome-steps .ws-body {
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
 /* ---------- Onboarding step popover ----------
    Non-blocking: the popover and the card body let pointer events pass
    through to the underlying grid/buttons/zones so the user can try the
@@ -3542,6 +3597,37 @@ body.mode-performance .debug-panel {
 }
 .perf-tutorial .pt-dismiss,
 .perf-tutorial .perf-step-card .btn { pointer-events: auto; }
+
+/* "Try it now" hint — small pulsing yellow chip below the body copy
+   that tells the user the card is non-blocking so they can perform the
+   action while reading. Pointer-events stay none (it's just a label). */
+.try-it-now {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--yellow);
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 225, 77, 0.45);
+  background: rgba(255, 225, 77, 0.06);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.try-it-now .tin-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 10px var(--yellow);
+  animation: tinPulse 1.4s ease-in-out infinite;
+}
+@keyframes tinPulse {
+  0%, 100% { transform: scale(1);   opacity: 1;   }
+  50%      { transform: scale(1.5); opacity: 0.5; }
+}
 
 /* ====================================================================
    Mini-tutorial gesture demos — small looping CSS animations that sit

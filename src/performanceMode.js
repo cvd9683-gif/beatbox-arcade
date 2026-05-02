@@ -537,8 +537,8 @@ export class PerformanceMode {
         <h1 class="intro-title">Perform your beat like a song</h1>
         <p class="intro-subtitle">Your beat keeps playing as the foundation. <strong>Left hand</strong> controls chords. <strong>Right hand</strong> controls arpeggios and texture.</p>
         <div class="welcome-actions">
-          <button class="btn big" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="skip">SKIP</button>
-          <button class="btn primary big" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="next">START TUTORIAL</button>
+          <button class="btn big" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="skip" data-dwell-ms="1800">SKIP</button>
+          <button class="btn primary big" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="next" data-dwell-ms="1500">START TUTORIAL</button>
         </div>
       </div>
     `;
@@ -550,7 +550,7 @@ export class PerformanceMode {
     this.tutEl.innerHTML = this._stepCardHTML({
       eyebrow: 'STEP 1 OF 3 · LEFT HAND',
       title: 'Open the chord',
-      body: 'Move your <strong>LEFT hand</strong> over a chord. <strong>Spread your fingers</strong> to open the sound.',
+      body: 'Move your <strong>LEFT hand</strong> over a chord. <strong>Spread your fingers</strong> to swell the sound.',
       demo: PERF_GESTURE_DEMOS.spread,
     });
     this.tutEl.className = 'perf-tutorial is-popover anchor-left';
@@ -560,7 +560,7 @@ export class PerformanceMode {
   _renderStepArp() {
     this.tutEl.innerHTML = this._stepCardHTML({
       eyebrow: 'STEP 2 OF 3 · RIGHT HAND',
-      title: 'Shape the arpeggio',
+      title: 'Speed up the arpeggio',
       body: 'Move your <strong>RIGHT hand</strong> over an arpeggio. <strong>Spread your fingers</strong> to speed it up.',
       demo: PERF_GESTURE_DEMOS.arp,
     });
@@ -586,9 +586,10 @@ export class PerformanceMode {
         <div class="onboard-eyebrow">${eyebrow}</div>
         <div class="onboard-title">${title}</div>
         <div class="onboard-body">${body}</div>
+        <div class="try-it-now"><span class="tin-pulse"></span>Try it now — the tutorial stays open</div>
         <div class="onboard-actions">
-          <button class="btn" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="skip">SKIP TUTORIAL</button>
-          <button class="btn primary" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="next">GOT IT</button>
+          <button class="btn" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="skip" data-dwell-ms="1800">SKIP TUTORIAL</button>
+          <button class="btn primary" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="next" data-dwell-ms="1500">GOT IT</button>
         </div>
       </div>
     `;
@@ -612,17 +613,13 @@ export class PerformanceMode {
     this._showTutorial(next);
   }
 
-  // Auto-advance on action: when the chord step is showing and the user
-  // actually swells the chord, we move them along to the arp step. Same
-  // for the arp step → transport. Avoids gating the next hint behind a
-  // dismiss click when the user clearly understood and did the thing.
-  _maybeAutoAdvanceTutorial() {
-    if (this._currentTutorialKey === 'chord' && this.leftSwell > PERF_STEP_THRESHOLD) {
-      this._advanceTutorial();
-    } else if (this._currentTutorialKey === 'arp' && this.rightSpeed > PERF_STEP_THRESHOLD) {
-      this._advanceTutorial();
-    }
-  }
+  // Auto-advance was disabled after testing: chord/arp steps were
+  // closing the moment a user crossed the swell/speed threshold while
+  // exploring, which felt like the tutorial was "skipping itself."
+  // The user must now hover GOT IT to advance — same as Create Mode —
+  // so they can actually read each card and try the gesture multiple
+  // times if they want. No-op kept so call sites don't need to change.
+  _maybeAutoAdvanceTutorial() { /* intentionally disabled */ }
 
   _dismissTutorial(persist = true) {
     if (!this.tutEl) return;

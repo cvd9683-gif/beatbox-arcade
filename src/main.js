@@ -72,19 +72,42 @@ app.innerHTML = `
     <div class="dwell-progress"></div>
   </div>
 
-  <!-- Welcome modal — short, action-based copy. Two buttons, both dwell-
-       activatable. "Start Tutorial" kicks off the step-by-step guided
-       onboarding; "Skip" jumps straight to the app and ends the flow
-       for this session. The "? HOW TO USE" button in the topbar
-       restarts the flow at any time. -->
+  <!-- Welcome modal — first thing the user sees on load. Three numbered
+       steps explain the flow before any mini-tutorial fires. Both
+       buttons are dwell-activatable; the modal does NOT auto-advance,
+       the user must explicitly choose Start or Skip. The "? HOW TO USE"
+       button in the topbar restarts the flow at any time. -->
   <div id="intro-overlay" class="intro-overlay" style="display:none">
-    <div class="intro-card welcome-card">
-      <div class="intro-eyebrow">CREATE MODE</div>
-      <h1 class="intro-title">Make a beat with your hands</h1>
-      <p class="intro-subtitle">Use your hand cursor to build a beat. Hover with your right hand. Pinch to place sounds. When your beat is ready, perform it in Performance Mode.</p>
+    <div class="intro-card welcome-card welcome-card-v2">
+      <div class="intro-eyebrow">WELCOME</div>
+      <h1 class="intro-title">Beatbox Arcade</h1>
+      <p class="intro-subtitle">Make a beat with your hand, then perform it like a song.</p>
+      <ol class="welcome-steps">
+        <li>
+          <span class="ws-num">1</span>
+          <div class="ws-text">
+            <div class="ws-title">Build a beat</div>
+            <div class="ws-body">Hover over the grid and pinch to place sounds.</div>
+          </div>
+        </li>
+        <li>
+          <span class="ws-num">2</span>
+          <div class="ws-text">
+            <div class="ws-title">Play your beat</div>
+            <div class="ws-body">Hover over Play and hold until the ring fills.</div>
+          </div>
+        </li>
+        <li>
+          <span class="ws-num">3</span>
+          <div class="ws-text">
+            <div class="ws-title">Perform it</div>
+            <div class="ws-body">Use Performance Mode to add chords and arpeggios with both hands.</div>
+          </div>
+        </li>
+      </ol>
       <div class="welcome-actions">
-        <button id="btn-intro-skip" class="btn big" type="button" data-hand-dwell data-tutorial-dismiss>SKIP</button>
-        <button id="btn-intro-start" class="btn primary big" type="button" data-hand-dwell data-tutorial-dismiss>START TUTORIAL</button>
+        <button id="btn-intro-skip" class="btn big" type="button" data-hand-dwell data-tutorial-dismiss data-dwell-ms="1800">SKIP TUTORIAL</button>
+        <button id="btn-intro-start" class="btn primary big" type="button" data-hand-dwell data-tutorial-dismiss data-dwell-ms="1500">START GUIDED TUTORIAL</button>
       </div>
     </div>
   </div>
@@ -183,32 +206,32 @@ const CREATE_STEPS = [
     key: 'grid',
     anchor: '#beat-grid',
     placement: 'right',
-    title: 'Hover over a square',
-    body: 'Hover over a square. <strong>Pinch</strong> to add or remove a sound.',
+    title: 'Pinch to place a beat',
+    body: 'Move your hand over a square, then <strong>pinch</strong> your thumb and index finger.',
     demo: GESTURE_DEMOS.pinch,
   },
   {
     key: 'play',
     anchor: '#btn-play',
     placement: 'top',
-    title: 'Hover over Play',
-    body: 'Hover over <strong>PLAY</strong> with your right hand until the ring fills.',
+    title: 'Hover Play to start',
+    body: 'Hold your right hand over <strong>PLAY</strong> until the ring fills.',
     demo: GESTURE_DEMOS.hoverDwell('PLAY'),
   },
   {
     key: 'tempo',
     anchor: '#tempo-panel',
     placement: 'left',
-    title: 'Adjust the tempo',
-    body: 'Hover near the tempo control. Move your hand <strong>up or down</strong> to change the speed.',
+    title: 'Move to change tempo',
+    body: 'Hover the tempo control, then move your hand <strong>up or down</strong> to change the speed.',
     demo: GESTURE_DEMOS.slider,
   },
   {
     key: 'performance',
     anchor: '#btn-performance',
     placement: 'top',
-    title: 'Try Performance Mode',
-    body: 'Hover over <strong>PERFORMANCE MODE</strong> to turn your beat into a song.',
+    title: 'Open Performance Mode',
+    body: 'Hover <strong>PERFORMANCE MODE</strong> to turn your beat into a full song.',
     demo: GESTURE_DEMOS.hoverDwell('PERF'),
   },
 ];
@@ -279,9 +302,10 @@ function renderStep(idx) {
       <div class="onboard-eyebrow">STEP ${idx + 1} OF ${CREATE_STEPS.length}</div>
       <div class="onboard-title">${step.title}</div>
       <div class="onboard-body">${step.body}</div>
+      <div class="try-it-now"><span class="tin-pulse"></span>Try it now — the tutorial stays open</div>
       <div class="onboard-actions">
-        <button class="btn" type="button" data-hand-dwell data-tutorial-dismiss data-onboard-action="skip">SKIP TUTORIAL</button>
-        <button class="btn primary" type="button" data-hand-dwell data-tutorial-dismiss data-onboard-action="next">GOT IT</button>
+        <button class="btn" type="button" data-hand-dwell data-tutorial-dismiss data-onboard-action="skip" data-dwell-ms="1800">SKIP TUTORIAL</button>
+        <button class="btn primary" type="button" data-hand-dwell data-tutorial-dismiss data-onboard-action="next" data-dwell-ms="1500">GOT IT</button>
       </div>
     </div>
   `;
@@ -330,7 +354,8 @@ function onboardingFinish() {
 
 // Anyone (sequencer, mode switch) can fire one of these when the user
 // performs the action a step is teaching; if that step is currently
-// shown, advance.
+// shown, advance — *with* a cooldown so the auto-advance can't
+// rubber-band into a dwell on the next step's GOT IT button.
 function onboardingNotify(action) {
   if (!onboarding.active) return;
   const cur = CREATE_STEPS[onboarding.stepIdx];
@@ -341,7 +366,10 @@ function onboardingNotify(action) {
     tempoSet:  'tempo',
     performance: 'performance',
   };
-  if (map[action] === cur.key) onboardingAdvance();
+  if (map[action] === cur.key) {
+    startTutCooldown();
+    onboardingAdvance();
+  }
 }
 
 if (introOverlay) showIntro();
@@ -569,12 +597,26 @@ function setStatus(msg) { statusBar.textContent = msg; }
 
 // Mode-agnostic tutorial dwell-press. While any tutorial modal is open,
 // a hand cursor inside the GOT IT / START BUILDING button bounds fills a
-// progress ring and clicks after TUT_DWELL_MS — so the user can close
-// every tutorial without keyboard or mouse. Pinch-trigger inside the
-// button bounds also fires immediately. Coordinates use the same
-// transform as paintCursor() so what's drawn is what's hit.
-const TUT_DWELL_MS = 700;
+// progress ring and clicks after the button's dwell duration — so the
+// user can close every tutorial without keyboard or mouse. Pinch-trigger
+// inside the button bounds also fires immediately, but is gated by the
+// same cooldown so it can't chain-skip back-to-back steps.
+//
+// Per-button override via data-dwell-ms="N" attribute. Defaults are
+// generous on purpose — testers complained that 700ms felt instant once
+// the cursor was already parked over the button area.
+const TUT_DWELL_MS = 1500;          // GOT IT / START / NEXT default
+const TUT_DWELL_COOLDOWN_MS = 500;  // post-click block, prevents chain-skip
 let tutDwellState = { btn: null, startedAt: 0 };
+let tutDwellCooldownUntil = 0;
+
+function getDwellMsFor(btn) {
+  const override = parseInt(btn?.dataset?.dwellMs ?? '', 10);
+  return Number.isFinite(override) && override > 0 ? override : TUT_DWELL_MS;
+}
+function startTutCooldown() {
+  tutDwellCooldownUntil = performance.now() + TUT_DWELL_COOLDOWN_MS;
+}
 
 function findOpenTutorial() {
   const isVisible = (el) => {
@@ -636,29 +678,43 @@ function tutorialDwellTick(data) {
   const overEl = document.elementFromPoint(x, y);
   const btn = overEl?.closest('[data-tutorial-dismiss]') || null;
 
+  // Post-click cooldown: a tutorial step just closed and the cursor is
+  // probably still parked in the same spot. Refuse to start a fresh
+  // dwell — or accept a pinch — until the user has had time to look at
+  // the next step. Without this, hover-hold quietly chain-skips through
+  // the whole tutorial.
+  const now = performance.now();
+  if (now < tutDwellCooldownUntil) {
+    if (tutDwellState.btn) clearTutDwell();
+    return blocking;
+  }
+
   const pinching = data?.right?.pinchTriggered || data?.left?.pinchTriggered;
   if (btn && pinching) {
     btn.classList.add('pinch-flash');
     setTimeout(() => btn.classList.remove('pinch-flash'), 250);
     btn.click();
     clearTutDwell();
+    startTutCooldown();
     return true;   // pinch over a tutorial button always wins
   }
 
   if (btn) {
     if (tutDwellState.btn !== btn) {
       clearTutDwell();
-      tutDwellState = { btn, startedAt: performance.now() };
+      tutDwellState = { btn, startedAt: now };
       btn.classList.add('hand-hover');
     }
-    const elapsed = performance.now() - tutDwellState.startedAt;
-    const pct = Math.min(100, (elapsed / TUT_DWELL_MS) * 100);
+    const dwellMs = getDwellMsFor(btn);
+    const elapsed = now - tutDwellState.startedAt;
+    const pct = Math.min(100, (elapsed / dwellMs) * 100);
     btn.style.setProperty('--dwell-fill', `${pct}%`);
-    if (elapsed >= TUT_DWELL_MS) {
+    if (elapsed >= dwellMs) {
       btn.classList.add('pinch-flash');
       setTimeout(() => btn.classList.remove('pinch-flash'), 250);
       btn.click();
       clearTutDwell();
+      startTutCooldown();
     }
     // While the cursor is actively dwelling on a dismiss button, block
     // the per-mode handFrame so we don't simultaneously click a button
