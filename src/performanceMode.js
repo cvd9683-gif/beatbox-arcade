@@ -148,6 +148,15 @@ export class PerformanceMode {
     this._currentTutorialKey = null;
     this._sliderTutorialShown = false;
 
+    // Staged onboarding — gates which side of the UI is live + which
+    // transport buttons are visible. Driven by the tutorial Next/Back/
+    // Finish buttons and by the topbar Restart Tutorial button.
+    //   'harmony' → only left side, transport hidden
+    //   'arp'     → only right side, transport hidden
+    //   'full'    → both sides, full transport
+    //   'idle'    → onboarding finished/skipped, full UI live
+    this._stage = 'idle';
+
     this.audioState = {
       isPlaying: true,
       isMuted: false,
@@ -170,11 +179,11 @@ export class PerformanceMode {
             <span class="perf-subtitle">left = chord · right = arpeggio</span>
           </div>
           <div class="perf-transport" id="perf-transport-row">
-            <button id="perf-master"  class="btn-trans master" type="button" data-hand-dwell title="Master Play / Pause">▶ MASTER</button>
-            <button id="perf-beat"    class="btn-trans" type="button" data-hand-dwell title="Beat Play / Pause">▶ BEAT</button>
-            <button id="perf-harmony" class="btn-trans" type="button" data-hand-dwell title="Harmony Play / Pause">▶ HARMONY</button>
-            <button id="perf-restart" class="btn-trans" type="button" data-hand-dwell title="Restart loop">↻</button>
-            <button id="perf-help"    class="btn-trans help wide" type="button" data-hand-dwell title="Open the full tutorial">? HOW TO PLAY</button>
+            <button id="perf-master"  class="btn-trans master perf-transport-full" type="button" data-hand-dwell title="Master Play / Pause">▶ MASTER</button>
+            <button id="perf-beat"    class="btn-trans perf-transport-full" type="button" data-hand-dwell title="Beat Play / Pause">▶ BEAT</button>
+            <button id="perf-harmony" class="btn-trans perf-transport-full" type="button" data-hand-dwell title="Harmony Play / Pause">▶ HARMONY</button>
+            <button id="perf-restart" class="btn-trans perf-transport-full" type="button" data-hand-dwell title="Restart loop">↻</button>
+            <button id="perf-help"    class="btn-trans help wide" type="button" data-hand-dwell title="Restart the staged tutorial">↻ RESTART TUTORIAL</button>
             <button id="perf-back"    class="btn-trans back" type="button" data-hand-dwell title="Back to Create Mode">← CREATE</button>
           </div>
           <div class="perf-armed-chip">
@@ -185,6 +194,7 @@ export class PerformanceMode {
 
         <div class="perf-surface">
           <section class="perf-half perf-half-left">
+            <span class="perf-half-locked-badge">Unlocks in stage 3</span>
             <div class="perf-half-head">
               <div class="ph-eyebrow">LEFT HAND</div>
               <h2 class="ph-heading">Open the chord</h2>
@@ -218,6 +228,7 @@ export class PerformanceMode {
           </section>
 
           <section class="perf-half perf-half-right">
+            <span class="perf-half-locked-badge">Unlocks in stage 2</span>
             <div class="perf-half-head">
               <div class="ph-eyebrow">RIGHT HAND</div>
               <h2 class="ph-heading">Shape the arpeggio</h2>
@@ -321,7 +332,7 @@ export class PerformanceMode {
     this.beatBtn.addEventListener('click', () => this._toggleBeat());
     this.harmonyBtn.addEventListener('click', () => this._toggleHarmony());
     this.restartBtn.addEventListener('click', () => this._restartLoop());
-    this.helpBtn.addEventListener('click', () => this._showTutorial('intro'));
+    this.helpBtn.addEventListener('click', () => this._startStagedTutorial());
     this.testBtn.addEventListener('click', () => this._testChord());
     this.testArpBtn.addEventListener('click', () => this._testArp());
     this.stopAllBtn.addEventListener('click', () => this.stopAllPerformanceAudio());
@@ -499,12 +510,32 @@ export class PerformanceMode {
     this._renderArpZone();
     this._setStatus('Move your left hand over a chord. Right hand for arpeggios.');
     this._updateAllButtons();
-    // Show the full intro tutorial the first time the user enters
-    // Performance Mode this session. main.js clears localStorage on every
-    // refresh, so it always reappears for the demo.
+    // Staged onboarding the first time the user enters Performance Mode
+    // this session. main.js clears localStorage on every refresh, so it
+    // always reappears for the demo. The Restart Tutorial button always
+    // re-enters the flow regardless of the seen flag.
     let introSeen = false;
     try { introSeen = localStorage.getItem('perfMode.tut.intro.v1') === '1'; } catch {}
-    if (!introSeen) this._showTutorial('intro');
+    if (introSeen) this._setStage('idle');
+    else this._startStagedTutorial();
+  }
+
+  // Apply a stage class to the performance-stage container — drives all
+  // the dim/hide CSS. Also stored as this._stage for the handFrame gate.
+  _setStage(stage) {
+    this._stage = stage;
+    const stageEl = this.root.querySelector('.performance-stage');
+    if (!stageEl) return;
+    stageEl.classList.remove('stage-harmony', 'stage-arp', 'stage-full', 'stage-idle');
+    stageEl.classList.add(`stage-${stage}`);
+  }
+
+  _startStagedTutorial() {
+    // Dismiss any open tutorial first so the staged flow always wins.
+    if (this.tutEl) this.tutEl.style.display = 'none';
+    this._currentTutorialKey = null;
+    this._setStage('harmony');
+    this._showTutorial('intro');
   }
 
   stop() {
@@ -522,12 +553,12 @@ export class PerformanceMode {
   _showTutorial(key = 'intro') {
     if (!this.tutEl) return;
     this._currentTutorialKey = key;
-    if (key === 'intro')      this._renderIntro();
-    else if (key === 'chord') this._renderStepChord();
-    else if (key === 'arp')   this._renderStepArp();
-    else if (key === 'transport') this._renderStepTransport();
+    if (key === 'intro')           this._renderIntro();
+    else if (key === 'harmony')    this._renderStageHarmony();
+    else if (key === 'arp')        this._renderStageArp();
+    else if (key === 'full')       this._renderStageFull();
     this.tutEl.style.display = 'flex';
-    console.log('[Perf] tutorial →', key);
+    console.log('[Perf] tutorial →', key, '· stage', this._stage);
   }
 
   _renderIntro() {
@@ -535,10 +566,10 @@ export class PerformanceMode {
       <div class="intro-card welcome-card perf-intro-card">
         <div class="intro-eyebrow">PERFORMANCE MODE</div>
         <h1 class="intro-title">Perform your beat like a song</h1>
-        <p class="intro-subtitle">Your beat keeps playing as the foundation. <strong>Left hand</strong> controls chords. <strong>Right hand</strong> controls arpeggios and texture.</p>
+        <p class="intro-subtitle">Three stages: harmony first, then arpeggio, then the full instrument. Each stage unlocks the next.</p>
         <div class="welcome-actions">
-          <button class="btn big" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="skip" data-dwell-ms="1800">SKIP</button>
-          <button class="btn primary big" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="next" data-dwell-ms="1500">START TUTORIAL</button>
+          <button class="btn big" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="skip-all" data-dwell-ms="1800">SKIP TUTORIAL</button>
+          <button class="btn primary big" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="next" data-dwell-ms="1500">START GUIDED TUTORIAL</button>
         </div>
       </div>
     `;
@@ -546,40 +577,52 @@ export class PerformanceMode {
     this._wireStepButtons();
   }
 
-  _renderStepChord() {
+  _renderStageHarmony() {
+    this._setStage('harmony');
     this.tutEl.innerHTML = this._stepCardHTML({
-      eyebrow: 'STEP 1 OF 3 · LEFT HAND',
-      title: 'Open the chord',
-      body: 'Move your <strong>LEFT hand</strong> over a chord. <strong>Spread your fingers</strong> to swell the sound.',
+      eyebrow: 'STAGE 1 OF 3 · LEFT HAND ONLY',
+      title: 'Step 1: Open the harmony',
+      body: 'Move your <strong>LEFT hand</strong> over a chord. <strong>Spread your thumb and index finger</strong> to make the chord swell.',
       demo: PERF_GESTURE_DEMOS.spread,
+      back: false,
+      nextLabel: 'NEXT',
     });
     this.tutEl.className = 'perf-tutorial is-popover anchor-left';
     this._wireStepButtons();
   }
 
-  _renderStepArp() {
+  _renderStageArp() {
+    this._setStage('arp');
     this.tutEl.innerHTML = this._stepCardHTML({
-      eyebrow: 'STEP 2 OF 3 · RIGHT HAND',
-      title: 'Speed up the arpeggio',
-      body: 'Move your <strong>RIGHT hand</strong> over an arpeggio. <strong>Spread your fingers</strong> to speed it up.',
+      eyebrow: 'STAGE 2 OF 3 · RIGHT HAND ONLY',
+      title: 'Step 2: Shape the arpeggio',
+      body: 'Move your <strong>RIGHT hand</strong> over a phrase zone. <strong>Spread your thumb and index finger</strong> to speed it up.',
       demo: PERF_GESTURE_DEMOS.arp,
+      back: true,
+      nextLabel: 'NEXT',
     });
     this.tutEl.className = 'perf-tutorial is-popover anchor-right';
     this._wireStepButtons();
   }
 
-  _renderStepTransport() {
+  _renderStageFull() {
+    this._setStage('full');
     this.tutEl.innerHTML = this._stepCardHTML({
-      eyebrow: 'STEP 3 OF 3 · CONTROLS',
-      title: 'Pause anything you like',
-      body: 'Use the <strong>top controls</strong> to pause the beat, harmony, or whole song. Hover any button until the ring fills.',
+      eyebrow: 'STAGE 3 OF 3 · FULL INSTRUMENT',
+      title: 'Step 3: Put it together',
+      body: 'Left hand opens the chords. Right hand shapes the arpeggio. Use the <strong>top controls</strong> to pause or restart the song.',
       demo: PERF_GESTURE_DEMOS.hoverDwell,
+      back: true,
+      nextLabel: 'FINISH TUTORIAL',
     });
     this.tutEl.className = 'perf-tutorial is-popover anchor-top';
     this._wireStepButtons();
   }
 
-  _stepCardHTML({ eyebrow, title, body, demo }) {
+  _stepCardHTML({ eyebrow, title, body, demo, back = false, nextLabel = 'NEXT' }) {
+    const backBtn = back
+      ? `<button class="btn" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="back" data-dwell-ms="1500">BACK</button>`
+      : '';
     return `
       <div class="onboard-card perf-step-card">
         ${demo || ''}
@@ -588,29 +631,51 @@ export class PerformanceMode {
         <div class="onboard-body">${body}</div>
         <div class="try-it-now"><span class="tin-pulse"></span>Try it now — the tutorial stays open</div>
         <div class="onboard-actions">
-          <button class="btn" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="skip" data-dwell-ms="1800">SKIP TUTORIAL</button>
-          <button class="btn primary" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="next" data-dwell-ms="1500">GOT IT</button>
+          <button class="btn" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="skip-all" data-dwell-ms="1800">SKIP TUTORIAL</button>
+          ${backBtn}
+          <button class="btn primary" type="button" data-hand-dwell data-tutorial-dismiss data-perf-step="next" data-dwell-ms="1500">${nextLabel}</button>
         </div>
       </div>
     `;
   }
 
   _wireStepButtons() {
-    this.tutEl.querySelector('[data-perf-step="skip"]')
-        ?.addEventListener('click', () => this._dismissTutorial(true));
+    this.tutEl.querySelector('[data-perf-step="skip-all"]')
+        ?.addEventListener('click', () => this._finishStagedTutorial(true));
     this.tutEl.querySelector('[data-perf-step="next"]')
         ?.addEventListener('click', () => this._advanceTutorial());
+    this.tutEl.querySelector('[data-perf-step="back"]')
+        ?.addEventListener('click', () => this._backTutorial());
   }
 
   _advanceTutorial() {
-    const order = ['intro', 'chord', 'arp', 'transport'];
+    const order = ['intro', 'harmony', 'arp', 'full'];
     const idx = order.indexOf(this._currentTutorialKey);
     const next = order[idx + 1];
     if (!next) {
-      this._dismissTutorial(true);
+      // Past the last stage — finish + reveal full UI.
+      this._finishStagedTutorial(true);
       return;
     }
     this._showTutorial(next);
+  }
+
+  _backTutorial() {
+    const order = ['intro', 'harmony', 'arp', 'full'];
+    const idx = order.indexOf(this._currentTutorialKey);
+    const prev = order[idx - 1];
+    if (!prev || prev === 'intro') {
+      // Going back from harmony goes to the intro modal.
+      this._showTutorial('intro');
+      this._setStage('harmony');   // intro modal: keep harmony staged
+      return;
+    }
+    this._showTutorial(prev);
+  }
+
+  _finishStagedTutorial(persist = true) {
+    this._setStage('idle');
+    this._dismissTutorial(persist);
   }
 
   // Auto-advance was disabled after testing: chord/arp steps were
@@ -822,8 +887,14 @@ export class PerformanceMode {
     // surface hovering — no need to "claim" a hand here.
     this._tickTransportDwell(left, right);
 
+    // Stage gate: during 'arp' the left side is dimmed/locked, so we
+    // skip all left-hand processing — no chord activation, no swell,
+    // no audio modulation. 'harmony', 'full', and 'idle' all process
+    // the left hand normally.
+    const leftActive = this._stage !== 'arp';
+
     // ---- LEFT HAND: hit detection from grid bounding rect ----
-    if (left?.cursor) {
+    if (leftActive && left?.cursor) {
       const px = left.cursor.x * window.innerWidth;
       const py = left.cursor.y * window.innerHeight;
       const idx = this._chordIdxFromPixel(px, py);
@@ -865,8 +936,12 @@ export class PerformanceMode {
       }
     }
 
+    // Stage gate: during 'harmony' the right side is dimmed/locked, so
+    // we skip all right-hand processing.
+    const rightActive = this._stage !== 'harmony';
+
     // ---- RIGHT HAND: hit detection from arp zones bounding rect ----
-    if (right?.cursor) {
+    if (rightActive && right?.cursor) {
       const px = right.cursor.x * window.innerWidth;
       const py = right.cursor.y * window.innerHeight;
       const arpIdx = this._arpZoneFromPixel(px, py);

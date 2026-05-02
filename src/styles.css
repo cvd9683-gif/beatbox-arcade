@@ -3962,3 +3962,65 @@ body.mode-performance .debug-panel {
    doesn't grow taller than its anchor. */
 .onboard-card .gesture-demo + .onboard-eyebrow { margin-top: 2px; }
 .perf-tutorial .onboard-card .gesture-demo { margin-bottom: 6px; }
+
+/* ====================================================================
+   Performance Mode — staged onboarding (harmony → arp → full)
+   The .performance-stage container gets a stage-* class set by
+   PerformanceMode._setStage(). Inactive sides are dimmed + locked +
+   pointer-events disabled; full transport stays hidden until stage 3.
+   The handFrame() gate in performanceMode.js separately neutralizes
+   hit-testing for the dimmed side so a stray cursor can't trigger
+   anything outside the current stage.
+   ==================================================================== */
+.performance-stage .perf-half {
+  position: relative;
+  transition: opacity 0.35s ease, filter 0.35s ease;
+}
+.performance-stage .perf-half.is-locked {
+  pointer-events: none;
+}
+.performance-stage .perf-half-locked-badge {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 4px 9px;
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  background: rgba(92, 232, 255, 0.08);
+  border-radius: 2px;
+  text-transform: uppercase;
+  z-index: 2;
+  pointer-events: none;
+}
+.performance-stage.stage-harmony .perf-half-right .perf-half-locked-badge { display: block; }
+.performance-stage.stage-arp     .perf-half-left  .perf-half-locked-badge { display: block; }
+
+/* Stage 1 — harmony only. Right (arpeggio) side fades to almost
+   invisible so the user's eye lands on the chord pads. Stage 2 keeps
+   the chord side faintly visible as context (45%) so the user
+   remembers it's still there. */
+.performance-stage.stage-harmony .perf-half-right {
+  opacity: 0.18;
+  filter: grayscale(0.7);
+  pointer-events: none;
+}
+.performance-stage.stage-arp .perf-half-left {
+  opacity: 0.45;
+  filter: grayscale(0.4);
+  pointer-events: none;
+}
+
+/* Hide non-essential transport buttons during stages 1 + 2. Only
+   Back (← CREATE) and Restart Tutorial (↻) remain reachable. */
+.performance-stage.stage-harmony .perf-transport-full,
+.performance-stage.stage-arp     .perf-transport-full {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Stage 3 + idle — full UI, no rules apply. Transitions are smooth
+   thanks to the .perf-half opacity/filter transitions above. */
