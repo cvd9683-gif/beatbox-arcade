@@ -587,7 +587,9 @@ export class PerformanceMode {
       back: false,
       nextLabel: 'NEXT',
     });
-    this.tutEl.className = 'perf-tutorial is-popover anchor-left';
+    // Card anchored to the RIGHT side so it sits over the dimmed arp
+    // half — leaves the chord pads on the LEFT fully visible/testable.
+    this.tutEl.className = 'perf-tutorial is-popover anchor-right';
     this._wireStepButtons();
   }
 
@@ -601,7 +603,9 @@ export class PerformanceMode {
       back: true,
       nextLabel: 'NEXT',
     });
-    this.tutEl.className = 'perf-tutorial is-popover anchor-right';
+    // Card anchored to the LEFT side so it sits over the (context-dim)
+    // chord half — leaves the arp zones on the RIGHT fully visible.
+    this.tutEl.className = 'perf-tutorial is-popover anchor-left';
     this._wireStepButtons();
   }
 

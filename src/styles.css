@@ -267,12 +267,23 @@ body.mode-create .webcam-host {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 200;
-  padding: 24px;
+  /* Slim padding so the card's own calc(100vw - 32px) width never
+     overflows the padded inner space on narrow viewports. */
+  padding: 16px;
   transition: opacity 0.22s ease;
 }
 .intro-overlay.out { opacity: 0; }
 .intro-card {
-  width: min(440px, 100%);
+  /* Responsive width — desktop caps at 440, mobile gets a 16px gutter
+     each side via the calc() so the card always sits inside the
+     viewport with a comfortable margin. */
+  width: min(440px, calc(100vw - 32px));
+  /* Vertical containment — short viewports must still show every
+     button. The card scrolls internally instead of pushing controls
+     off-screen. */
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
   background: rgba(15, 15, 20, 0.95);
   border: 1px solid var(--line-strong);
   padding: 28px 26px 22px;
@@ -1370,7 +1381,13 @@ body.mode-freestyle #screen-freestyle { padding: 0; }
 }
 /* Performance intro card — sized for the 3-card layout. */
 .intro-card.big.perf-intro-card {
-  width: min(820px, 100%);
+  width: min(820px, calc(100vw - 32px));
+}
+/* Performance intro card when used WITHOUT the .big variant
+   (current PerformanceMode._renderIntro markup) — same responsive
+   behavior as welcome-card-v2 so SKIP/START stay inside the card. */
+.intro-card.perf-intro-card:not(.big) {
+  width: min(560px, calc(100vw - 32px));
 }
 /* Footnote line under the steps grid — same muted/mono style as the
    small instruction labels elsewhere. */
@@ -3321,6 +3338,10 @@ body.mode-performance .debug-panel {
   -webkit-backdrop-filter: blur(6px);
   align-items: center;
   justify-content: center;
+  /* Override the popover variant's outer padding so the card itself
+     can claim full responsive width without overflow on narrow
+     viewports. */
+  padding: 16px;
 }
 .perf-tutorial.is-modal .pt-card {
   width: min(640px, 92%);
@@ -3453,7 +3474,7 @@ body.mode-performance .debug-panel {
 
 /* ---------- Welcome modal v2 (3-step intro) ---------- */
 .intro-card.welcome-card-v2 {
-  width: min(560px, 100%);
+  width: min(560px, calc(100vw - 32px));
 }
 .welcome-steps {
   list-style: none;
