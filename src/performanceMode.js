@@ -603,9 +603,11 @@ export class PerformanceMode {
       back: true,
       nextLabel: 'NEXT',
     });
-    // Card anchored to the LEFT side so it sits over the (context-dim)
-    // chord half — leaves the arp zones on the RIGHT fully visible.
-    this.tutEl.className = 'perf-tutorial is-popover anchor-left';
+    // All staged tutorials anchor to the RIGHT so the card stays in a
+    // consistent screen position the user can rely on. A media query in
+    // styles.css drops the card to the bottom on narrow viewports where
+    // a right rail would crowd the playable surfaces.
+    this.tutEl.className = 'perf-tutorial is-popover anchor-right';
     this._wireStepButtons();
   }
 
@@ -619,7 +621,8 @@ export class PerformanceMode {
       back: true,
       nextLabel: 'FINISH TUTORIAL',
     });
-    this.tutEl.className = 'perf-tutorial is-popover anchor-top';
+    // Right rail keeps the location predictable across all stages.
+    this.tutEl.className = 'perf-tutorial is-popover anchor-right';
     this._wireStepButtons();
   }
 

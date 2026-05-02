@@ -284,9 +284,14 @@ body.mode-create .webcam-host {
   max-height: 90vh;
   max-height: 90dvh;
   overflow-y: auto;
+  /* Reserve space for the scrollbar so action buttons don't slide
+     under it on the right edge. */
+  scrollbar-gutter: stable both-edges;
   background: rgba(15, 15, 20, 0.95);
   border: 1px solid var(--line-strong);
-  padding: 28px 26px 22px;
+  /* Bottom padding bumped so the buttons get clear breathing room
+     from the card border / scroll edge. */
+  padding: 28px 26px 26px;
   font-family: var(--sans);
   display: flex;
   flex-direction: column;
@@ -3316,16 +3321,40 @@ body.mode-performance .debug-panel {
 }
 /* Card body passes pointer events through so chord pads / arp zones
    underneath stay live; only SKIP / GOT IT capture clicks (re-enabled
-   by the .onboard-actions .btn override at the bottom of the file). */
+   by the .onboard-actions .btn override at the bottom of the file).
+   Narrow card width (300px) so the right-rail card leaves real estate
+   for the chord pads / arp zones the user is supposed to be testing. */
 .perf-tutorial.is-popover .onboard-card {
   pointer-events: none;
-  width: min(320px, 92%);
+  width: min(300px, 92%);
+  max-height: calc(100vh - 120px);
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
 }
 /* When anchored top, give it some breathing room below the transport
    row but above the chord/arp surfaces. */
 .perf-tutorial.is-popover.anchor-top { padding-top: 80px; }
 .perf-tutorial.is-popover.anchor-left  { padding-left:  clamp(16px, 2vw, 32px); }
 .perf-tutorial.is-popover.anchor-right { padding-right: clamp(16px, 2vw, 32px); }
+
+/* Narrow-viewport fallback — under 880px the right rail crowds the
+   playable surfaces, so drop the staged card to the bottom-center
+   below the interface instead. Width relaxes to nearly the full
+   viewport so the user can still read it. */
+@media (max-width: 880px) {
+  .perf-tutorial.is-popover.anchor-right,
+  .perf-tutorial.is-popover.anchor-left,
+  .perf-tutorial.is-popover.anchor-top {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 12px;
+  }
+  .perf-tutorial.is-popover .onboard-card {
+    width: min(560px, calc(100vw - 24px));
+    max-height: 40vh;
+    max-height: 40dvh;
+  }
+}
 
 /* Modal variant — full-stage darkened backdrop with a centered,
    wider card. Backdrop captures pointer events so the player can't
@@ -3463,13 +3492,23 @@ body.mode-performance .debug-panel {
 }
 .welcome-actions {
   display: flex;
+  flex-wrap: wrap;        /* stack instead of clipping on narrow widths */
   gap: 12px;
   margin-top: 10px;
   justify-content: flex-end;
 }
 .welcome-actions .btn {
-  flex: 0 0 auto;
-  min-width: 140px;
+  flex: 1 1 auto;         /* fill row + grow before wrapping */
+  min-width: 0;           /* allow shrink past content width */
+  min-height: 44px;       /* keep dwell-friendly hit area */
+}
+@media (min-width: 480px) {
+  /* On wider viewports, hold each button at a comfortable width and
+     let the row right-align as before. */
+  .welcome-actions .btn {
+    flex: 0 1 auto;
+    min-width: 140px;
+  }
 }
 
 /* ---------- Welcome modal v2 (3-step intro) ---------- */
@@ -3604,14 +3643,17 @@ body.mode-performance .debug-panel {
 .onboard-body strong { color: var(--text); }
 .onboard-actions {
   display: flex;
+  flex-wrap: wrap;          /* SKIP / BACK / NEXT stack on narrow cards */
   gap: 8px;
   justify-content: flex-end;
   margin-top: 4px;
 }
 .onboard-actions .btn {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 11px;
   letter-spacing: 1.5px;
-  padding: 8px 12px;
+  padding: 10px 12px;       /* slightly taller so dwell ring is comfortable */
   /* Re-enable hit-testing for just the controls — the card body is
      pointer-events: none so the user can touch through to the real UI. */
   pointer-events: auto;
