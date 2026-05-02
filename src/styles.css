@@ -3912,16 +3912,22 @@ body.mode-performance .debug-panel {
   34%, 100% { opacity: 0; }
 }
 
-/* ---- 4. spread-demo : chord opens as fingers spread ---- */
+/* ---- 4. spread-demo : chord opens as fingers spread ----
+   Frame is taller and content shifts down with bottom-aligned flex
+   + top padding so the floating hands above the chord can't clip on
+   the demo's overflow:hidden border. Chord shrunk to 44px and glow
+   max-scale capped at 1.25 so the swelling circle stays inside the
+   frame at peak. */
 .spread-demo {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
+  padding: 18px 0 10px;
 }
 .spread-demo .gd-chord {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: rgba(255, 92, 243, 0.18);
   border: 1px solid var(--pink);
@@ -3935,7 +3941,7 @@ body.mode-performance .debug-panel {
 }
 .spread-demo .gd-hands {
   position: absolute;
-  top: -22px;
+  top: -14px;
   left: 50%;
   transform: translateX(-50%);
   width: 32px;
@@ -3947,13 +3953,14 @@ body.mode-performance .debug-panel {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
+  font-size: 24px;
   filter: drop-shadow(0 0 10px var(--pink));
 }
 .spread-demo .gd-hand-pinch  { animation: gdShowFirst  2.6s ease-in-out infinite; }
 .spread-demo .gd-hand-spread { animation: gdShowSecond 2.6s ease-in-out infinite; }
 @keyframes gdGlowSwell {
   0%, 100% { transform: scale(0.55); opacity: 0.35; }
-  55%      { transform: scale(1.6);  opacity: 0.95; }
+  55%      { transform: scale(1.25); opacity: 0.95; }
 }
 @keyframes gdShowFirst {
   0%, 30%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
