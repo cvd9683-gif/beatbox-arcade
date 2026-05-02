@@ -3492,23 +3492,33 @@ body.mode-performance .debug-panel {
 }
 .welcome-actions {
   display: flex;
-  flex-wrap: wrap;        /* stack instead of clipping on narrow widths */
-  gap: 12px;
+  flex-wrap: nowrap;      /* keep SKIP + START in one row by default */
+  gap: 10px;
   margin-top: 10px;
   justify-content: flex-end;
 }
-.welcome-actions .btn {
-  flex: 1 1 auto;         /* fill row + grow before wrapping */
-  min-width: 0;           /* allow shrink past content width */
-  min-height: 44px;       /* keep dwell-friendly hit area */
+/* Override .btn.big sizing so two buttons fit comfortably in the
+   modal frame. The dwell hit-area stays generous (44px min-height)
+   without the letter-spacing/padding bloat that pushed them past
+   the card's right edge. */
+.welcome-actions .btn,
+.welcome-actions .btn.big {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 12px;
+  letter-spacing: 1.4px;
+  padding: 12px 14px;
+  min-height: 44px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-@media (min-width: 480px) {
-  /* On wider viewports, hold each button at a comfortable width and
-     let the row right-align as before. */
-  .welcome-actions .btn {
-    flex: 0 1 auto;
-    min-width: 140px;
-  }
+/* Very narrow screens — stack the buttons full-width so long labels
+   like START GUIDED TUTORIAL never get clipped. */
+@media (max-width: 400px) {
+  .welcome-actions { flex-wrap: wrap; }
+  .welcome-actions .btn,
+  .welcome-actions .btn.big { flex: 1 1 100%; }
 }
 
 /* ---------- Welcome modal v2 (3-step intro) ---------- */

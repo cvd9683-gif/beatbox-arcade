@@ -621,8 +621,12 @@ export class PerformanceMode {
       back: true,
       nextLabel: 'FINISH TUTORIAL',
     });
-    // Right rail keeps the location predictable across all stages.
-    this.tutEl.className = 'perf-tutorial is-popover anchor-right';
+    // Stage 3 anchors near the TOP transport row so the user's eye is
+    // drawn to the Master / Beat / Harmony / Restart controls the card
+    // is teaching. Stages 1+2 stay on the right rail (consistent
+    // location while exploring the playable surfaces); only Stage 3
+    // breaks pattern because the lesson is about the top controls.
+    this.tutEl.className = 'perf-tutorial is-popover anchor-top';
     this._wireStepButtons();
   }
 
